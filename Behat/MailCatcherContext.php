@@ -4,7 +4,8 @@ namespace Alex\MailCatcher\Behat;
 
 use Alex\MailCatcher\Client;
 use Alex\MailCatcher\Message;
-use Behat\Behat\Context\Context;
+use Behat\MinkExtension\Context\MinkContext;
+use Behat\MinkExtension\Context\RawMinkContext;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -12,7 +13,7 @@ use Symfony\Component\DomCrawler\Crawler;
  *
  * @author Alexandre Salomé <alexandre.salome@gmail.com>
  */
-class MailCatcherContext implements Context
+class MailCatcherContext extends RawMinkContext
 {
     /**
      * @var Client|null
@@ -87,6 +88,8 @@ class MailCatcherContext implements Context
         $message = $this->findMail($type, $value);
 
         $this->currentMessage = $message;
+
+        $this->visitPath($this->getClient()->getUrl().'/messages/'.$message->getId().'.html');
     }
 
     /**

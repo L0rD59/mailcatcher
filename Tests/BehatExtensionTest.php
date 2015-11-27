@@ -4,6 +4,7 @@ namespace Alex\MailCatcher\Tests;
 
 use Behat\Behat\ApplicationFactory;
 use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\NullOutput;
 
 class BehatExtensionTest extends AbstractTest
@@ -16,14 +17,14 @@ class BehatExtensionTest extends AbstractTest
             ->setSubject('hello mailcatcher')
             ->setFrom('world@example.org')
             ->setTo('mailcatcher@example.org')
-            ->setBody('This is a message from world to mailcatcher')
+            ->setBody('This is a message from world to mailcatcher', 'text/html')
         );
 
         $this->sendMessage(\Swift_Message::newInstance()
             ->setSubject('hello php')
             ->setFrom('world@example.org')
             ->setTo('php@example.org')
-            ->setBody('This is a message from world to php')
+            ->setBody('This is a message from world to php', 'text/html')
         );
 
         $this->runBehat(array(
@@ -34,7 +35,6 @@ class BehatExtensionTest extends AbstractTest
             // Criteria "from"
             'When I open mail from "world@example.org"',
             'Then I should see "from world" in mail',
-
             // Criteria "to"
             'When I open mail to "mailcatcher@example.org"',
             'Then I should see "from world to mailcatcher" in mail',
@@ -46,6 +46,10 @@ class BehatExtensionTest extends AbstractTest
             // Criteria "with subject"
             'When I open mail with subject "hello mailcatcher"',
             'Then I should see "from world to mailcatcher" in mail',
+
+            'And I should see "from world to mailcatcher"',
+
+//            'When I follow "a"',
         ));
 
         $this->runBehat(array(
@@ -71,18 +75,23 @@ class BehatExtensionTest extends AbstractTest
                     'default' => array(
                         'paths' => array(sys_get_temp_dir()),
                         'contexts' => array(
-                            'Behat\MinkExtension\Context\MinkContext',
-                            'Alex\MailCatcher\Behat\MailCatcherContext',
-                            'Alex\MailCatcher\Test\UrlContext',
-                            'Alex\MailCatcher\Test\TestContext',
+                            'Alex\MailCatcher\Behat\MailCatcherContext'
                         ),
                     ),
                 ),
                 'extensions' => array(
-                        'Alex\MailCatcher\Behat\MailCatcherExtension\Extension' => array(
-                            'url' => $client->getUrl(),
-                            'purge_before_scenario' => $purge_before_scenario
+                    'Behat\MinkExtension' => array(
+                        'base_url' => $client->getUrl(),
+                        'sessions' => array(
+                            'default' => array(
+                                'goutte' => array()
+                            )
+                        )
                     ),
+                    'Alex\MailCatcher\Behat\MailCatcherExtension\Extension' => array(
+                        'url' => $client->getUrl(),
+                        'purge_before_scenario' => $purge_before_scenario
+                    )
                 )
             )
         ));
@@ -93,15 +102,18 @@ class BehatExtensionTest extends AbstractTest
             $behat->setAutoExit(false);
 
             $input = new ArgvInput(array('behat', '--format', 'progress', '--config', $configFile, '--out', $outputFile, $file));
+//            $output = new ConsoleOutput();
             $output = new NullOutput();
 
             file_put_contents($file, $content);
             file_put_contents($configFile, $config);
             $result = $behat->run($input, $output);
+
             unlink($file);
             unlink($configFile);
 
         } catch (\Exception $exception) {
+
             unlink($file);
             unlink($file.'.config');
             $this->fail($exception->getMessage());
